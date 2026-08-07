@@ -94,7 +94,7 @@ fe_pipeline_all = ColumnTransformer(
 # In production this column does NOT exist, but the pipeline structure must remain identical.
 # I pass column index 0 as a dummy placeholder to keep the transformer slot aligned.
 # The id_transformer does nothing, so this placeholder does not change any features or predictions.
-        ("user_id", id_transformer, 0),
+        ("user_id", id_transformer, ["user_id"]),
         ("sites_raw", id_transformer, ["sites"]),
         ("temporal", temporal_transformer, ["date", "time", "location"]),
         ("behavioral", behavioral_transformer, ["sites"]),
