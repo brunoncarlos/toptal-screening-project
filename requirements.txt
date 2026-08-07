@@ -4,6 +4,6 @@ numpy==2.0.2
 joblib==1.5.3
 xgboost==3.3.0
 scikit-learn==1.6.1
-sentence-transformers==5.6.0
+sentence-transformers==2.2.2
 pycountry==26.2.16
 Unidecode==1.4.0
