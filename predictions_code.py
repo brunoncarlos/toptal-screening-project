@@ -1,4 +1,3 @@
-%%writefile predictions_code.py
 import sys
 import json
 import requests
