@@ -4,8 +4,10 @@ numpy==2.0.2
 joblib==1.5.3
 xgboost==2.0.3
 scikit-learn==1.6.1
-sentence-transformers==2.2.2
 pycountry==26.2.16
 Unidecode==1.4.0
-huggingface_hub==0.14.1
 cloudpickle==3.0.0
+sentence-transformers==3.0.1
+huggingface_hub==0.23.0
+transformers==4.41.2
+tokenizers==0.19.1
