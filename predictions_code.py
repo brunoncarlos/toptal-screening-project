@@ -9,6 +9,23 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 import os
 
+import warnings
+# Ignorar el UserWarning específico de XGBoost al cargar modelos serializados
+warnings.filterwarnings(
+    "ignore",
+    message=r".*If you are loading a serialized model.*",
+    category=UserWarning,
+)
+
+# Ignorar FutureWarning (por ejemplo el de huggingface_hub)
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+# Opcional: ignorar todos los warnings de una librería concreta
+import logging
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+logging.getLogger("transformers").setLevel(logging.ERROR)
+
+
 ############################################################
 # 1. Download all required files from GitHub
 ############################################################
@@ -132,7 +149,7 @@ def load_json(path):
         return json.load(f)
 
 verify_data = load_json("/content/catchjoe/verify.json")
-verify_df = pd.json_normalize(verify_data).head()
+verify_df = pd.json_normalize(verify_data)
 del verify_data
 
 # Insert dummy user_id (required by pipeline)
@@ -178,3 +195,6 @@ result_df = pd.DataFrame({"label": labels})
 result_df.to_csv("output/result.csv", index=False)
 
 print("✔ result.csv created successfully!")
+
+def main():
+    return labels

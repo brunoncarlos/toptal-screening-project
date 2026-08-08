@@ -13,8 +13,9 @@ COPY src/ src/
 COPY models/ models/
 COPY data/ data/
 COPY predictions_code.py .
+COPY run_standalone.py .
 
 # Ensure Python searches /app and /app/src
 ENV PYTHONPATH=/app:/app/src
 
-CMD ["python", "predictions_code.py"]
+CMD ["python", "run_standalone.py"]

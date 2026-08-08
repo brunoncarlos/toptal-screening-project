@@ -91,6 +91,83 @@ El archivo `result.csv` se guarda en la carpeta `output/` si existe.
 
 ---
 
+🧪 Experiment Tracking (Lightweight)
+Para asegurar reproducibilidad y trazabilidad, implementé un sistema de experiment tracking lightweight basado en pandas.
+Cada experimento registra:
+
+configuración del modelo (hiperparámetros, arquitectura)
+
+técnicas de undersampling
+
+métricas clave (precision, recall, F1)
+
+drift detectado
+
+threshold seleccionado
+
+features utilizadas
+
+timestamp del experimento
+
+Esto permite:
+
+comparar modelos de forma consistente
+
+identificar configuraciones ganadoras
+
+auditar resultados
+
+reproducir cualquier experimento
+
+seleccionar el modelo final con evidencia cuantitativa
+
+df["model_index"] = i
+df["undersampling"] = str(res["undersampling"])
+df["config"] = str(res["model"])
+df["recall"] = res["recall"]
+df["precision"] = res["precision"]
+df["drift"] = res["drift"]
+df["threshold"] = res["threshold"]
+
+
+⭐ Feature Importance
+Durante el análisis identifiqué cuatro grupos de features críticos para predecir si un usuario es Joe:
+
+1. Temporal Features
+timezone
+
+local_hour
+
+day_of_week
+
+session_time
+Estas variables capturan patrones de comportamiento diarios y geográficos.
+
+2. Behavioral Features
+número de sitios únicos
+
+diversidad (entropy)
+
+repetición de dominios
+
+longitud de la sesión
+Estas variables capturan el estilo de navegación del usuario.
+
+3. Environment Features
+browser
+
+OS
+
+locale
+
+location
+Estas variables ayudan a distinguir contextos de navegación.
+
+4. Embedding Features (NLP)
+Usé SentenceTransformer MiniLM-L6-v2 para convertir listas de sitios en vectores semánticos.
+Estos embeddings fueron los más importantes para el modelo finalgit add Dockerfile
+git commit -m "update Dockerfile"
+
 ## ✔️ Estado final
 
 El pipeline es completamente reproducible, el modelo está serializado, el drift está analizado y el script de predicción genera el archivo final sin dependencias externas.
