@@ -8,3 +8,4 @@ sentence-transformers==2.2.2
 pycountry==26.2.16
 Unidecode==1.4.0
 huggingface_hub==0.14.1
+cloudpickle==3.0.0
