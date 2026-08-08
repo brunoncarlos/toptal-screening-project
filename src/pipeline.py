@@ -6,8 +6,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, FunctionTransformer
 
 # 2. Import your feature modules
-from temporal_features import resolve_timezone, add_local_time_features
-from behavioral_features import extract_behavioral_features
+from src.temporal_features import resolve_timezone, add_local_time_features
+from src.behavioral_features import extract_behavioral_features
 
 # 3. Temporal transformer
 def temporal_transformer_func(df):
