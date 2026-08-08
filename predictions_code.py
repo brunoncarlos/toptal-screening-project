@@ -59,7 +59,6 @@ os.makedirs("src", exist_ok=True)
 os.makedirs("models", exist_ok=True)
 os.makedirs("data", exist_ok=True)
 os.makedirs("output", exist_ok=True)
-os.makedirs("data", exist_ok=True)
 
 # Download source code
 download_from_github("src/__init__.py")
@@ -140,15 +139,17 @@ compute_session_embeddings.DOMAIN_CACHE = domain_cache
 # 5. Load verification dataset
 ############################################################
 
+
+output_dir = os.path.join(os.getcwd(), "catchjoe")
 with zipfile.ZipFile("data/verify.zip", "r") as z:
-    z.extractall("/content/catchjoe")
+    z.extractall(output_dir)
 
 def load_json(path):
     """Load JSON file with UTF-8 handling."""
     with open(path, "r", encoding="utf-8-sig") as f:
         return json.load(f)
 
-verify_data = load_json("/content/catchjoe/verify.json")
+verify_data = load_json(os.path.join(output_dir, "verify.json"))
 verify_df = pd.json_normalize(verify_data)
 del verify_data
 
