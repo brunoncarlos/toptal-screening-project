@@ -1,14 +1,12 @@
-FROM python:3.12-slim
+FROM python:3.10-slim
 
 WORKDIR /app
 
-# Instalar PyTorch CPU (evita CUDA)
+# PyTorch CPU compatible
 RUN pip install torch==2.4.0 --index-url https://download.pytorch.org/whl/cpu
 
 COPY requirements.txt .
-
-RUN pip install --no-cache-dir -r requirements.txt --index-url https://pypi.org/simple
+RUN pip install --default-timeout=200 --no-cache-dir -r requirements.txt
 
 COPY predictions_code.py .
-
 CMD ["python", "predictions_code.py"]
