@@ -1,17 +1,28 @@
-# Toptal Screening Project – Fraud Detection
+**Toptal Screening Project – User Session Classification (Identify Joe)**
 
-Este proyecto implementa un pipeline completo de detección de fraude basado en:
-- Ingeniería de características temporal y comportamental
-- Embeddings de sesiones con Sentence-Transformers (MiniLM-L6-v2)
-- Pipeline de features con scikit-learn
-- Modelo final XGBoost
-- Optimización de umbral para maximizar F1
-- Reproducibilidad mediante un script de predicción (`predictions_code.py`)
+This project is part of the Toptal technical screening process.
+The objective is to analyze user session data and build a machine‑learning model capable of identifying a specific user: user_id = 0 (codename: Joe).
 
----
+The project demonstrates:
 
-## 📁 Estructura del proyecto
+- data understanding and EDA
 
+- temporal and behavioral feature engineering
+
+- semantic embeddings using Sentence‑Transformers
+
+- disciplined experiment tracking
+
+- model development and temporal‑drift evaluation
+
+- production‑ready pipeline design
+
+- reproducibility through a standalone prediction script 
+
+The final deliverable is a fully reproducible pipeline that generates result.csv containing predictions for the verification dataset.
+
+📁 Project Structure
+Código
 TOTAL SCREENING PROJECT/
 │
 ├── data/
@@ -27,100 +38,174 @@ TOTAL SCREENING PROJECT/
 ├── notebook/
 │   └── training_notebook.ipynb
 │
-├── output/
-│   └── result.csv
-|
 ├── src/
-│   └── __init__.py
+│   ├── __init__.py
 │   ├── behavioral_features.py
 │   ├── temporal_features.py
 │   ├── compute_session_embeddings.py
 │   ├── pipeline.py
 │
 ├── predictions_code.py
+├── run_standalone.py
+├── sitecustomize.py
 ├── requirements.txt
 └── README.md
 
----
+🧪 Data Understanding & EDA Summary
+The dataset is clean, diverse, and rich in behavioral structure.
+The classification problem is highly imbalanced, with Joe representing only a small fraction of all sessions.
 
-## 🧠 Model Selection & Temporal Drift
+Key opportunities identified during EDA:
 
-La selección del modelo no se basa únicamente en la métrica de validación.  
-El comportamiento de los usuarios cambia con el tiempo, y un modelo con alto recall en validación puede deteriorarse cuando se evalúa en sesiones futuras.
+- Local‑time normalization reveals true temporal habits hidden in GMT.
 
-**El drift temporal mide cuánto cae el desempeño del modelo al pasar de validación a test.**
+- Domain‑level aggregation captures browsing preferences and concentration patterns.
 
-El objetivo no es el modelo con el mayor recall en validación, sino el que **mantiene recall y precisión estables** entre ventanas temporales.
+- Behavioral intensity metrics quantify engagement and navigation style.
 
-Los modelos estables generalizan mejor y son más seguros para desplegar.
+- Environment attributes (browser, OS, locale, location) reflect stable user preferences.
 
----
+These insights form a strong foundation for building a robust pipeline capable of distinguishing Joe from other users.
 
-## ⚙️ Predicción final
+🕒 Temporal Split (Avoiding Leakage)
+The goal is to identify Joe’s sessions explicitly, not treat them as anomalies.
+Training, validation, and test sets contain sessions from all users.
 
-El archivo `predictions_code.py` ejecuta el pipeline completo:
+To avoid temporal leakage:
 
-- carga el modelo serializado  
-- aplica el pipeline de features  
-- genera los embeddings de sesión  
-- calcula los scores  
-- aplica el umbral óptimo  
-- produce un archivo `result.csv` con las predicciones finales
+- older sessions → training
 
-El archivo `result.csv` se guarda en la carpeta `output/` si existe.
+- middle‑period sessions → validation
 
----
+- most recent sessions → test
 
-## 🧩 Componentes principales
+This setup reflects real‑world deployment, where the model must generalize to future behavior and consistently identify Joe even when his activity appears normal.
 
-### **Feature Engineering**
-- Features temporales (sesiones, timestamps, timezone)
-- Features comportamentales (frecuencias, patrones de navegación)
-- Embeddings de sesiones con MiniLM
+🧩 Feature Engineering
+1. Temporal Features
+Session timestamps are provided in GMT.
+Using timezone_lookup.pkl, each timestamp is converted to the user’s local timezone.
 
-### **Pipeline**
-- Normalización y ensamblado de features
-- Carga de embeddings desde cache
-- Aplicación del modelo XGBoost
-- Umbral optimizado para maximizar F1
+Extracted features:
 
-### **Modelo**
-- Entrenado en notebook
-- Serializado en `models/`
-- Compatible con Python 3.10
+- local_hour
 
----
+- local_day_of_week
+
+- is_local_weekend
+
+- time_bin (morning, afternoon, evening, night)
+
+- is_night_session
+
+These features reveal true behavioral patterns that were hidden in GMT.
+
+2. Behavioral Features
+Domain‑level behavior captures how users browse, not just when.
+
+Extracted:
+
+- number of sites
+
+- total duration
+
+- average duration per site
+
+- duration variance
+
+- entropy (diversity)
+
+These features encode:
+
+- habits
+
+- intensity
+
+- diversity
+
+- preferences
+
+- engagement
+
+- navigation style
+
+3. Environment Features
+Stable user context:
+
+- browser
+
+- operating system
+
+- locale
+
+- location
+
+- gender
+
+These variables often correlate with long‑term browsing patterns.
+
+4. Embedding Features (NLP)
+Joe has a behavioral signature:
+
+- the types of sites he visits
+
+- the semantic meaning of those domains
+
+- the sequence of domains
+
+- the “topic flow” of his sessions
+
+Using SentenceTransformer MiniLM‑L6‑v2, each session is embedded into a semantic vector.
+
+Embeddings allow the model to understand:
+
+- topic similarity
+
+- domain semantics
+
+- session clustering
+
+- behavioral consistency
+
+This adds massive predictive power beyond raw counts.
+
+⚖️ Handling Class Imbalance
+Joe represents ~0.5% of the dataset.
+Training on raw distribution would cause the model to ignore Joe entirely.
+
+Applied controlled undersampling ratios:
+
+- 1:5
+
+- 1:9
+
+These preserve data integrity while allowing the model to learn meaningful patterns.
 
 🧪 Experiment Tracking (Lightweight)
-Para asegurar reproducibilidad y trazabilidad, implementé un sistema de experiment tracking lightweight basado en pandas.
-Cada experimento registra:
+A lightweight experiment‑tracking system was implemented using pandas.
+Each experiment logs:
 
-configuración del modelo (hiperparámetros, arquitectura)
+- model configuration
 
-técnicas de undersampling
+- undersampling strategy
 
-métricas clave (precision, recall, F1)
+- precision, recall, F1
 
-drift detectado
+- temporal drift
 
-threshold seleccionado
+- selected threshold
 
-features utilizadas
+This enables:
 
-timestamp del experimento
+- consistent model comparison
 
-Esto permite:
+- reproducibility
 
-comparar modelos de forma consistente
+- selection of the most stable model
 
-identificar configuraciones ganadoras
+Example fields:
 
-auditar resultados
-
-reproducir cualquier experimento
-
-seleccionar el modelo final con evidencia cuantitativa
-
+python
 df["model_index"] = i
 df["undersampling"] = str(res["undersampling"])
 df["config"] = str(res["model"])
@@ -129,46 +214,127 @@ df["precision"] = res["precision"]
 df["drift"] = res["drift"]
 df["threshold"] = res["threshold"]
 
+📉 Model Selection & Temporal Drift
+Behavioral data changes over time.
+A model with high validation recall may collapse when evaluated on future sessions.
 
-⭐ Feature Importance
-Durante el análisis identifiqué cuatro grupos de features críticos para predecir si un usuario es Joe:
+Temporal drift measures how much performance deteriorates from validation → test.
 
-1. Temporal Features
-timezone
+The final model is selected based on:
 
-local_hour
+- stability across time windows
 
-day_of_week
+- consistent recall and precision
 
-session_time
-Estas variables capturan patrones de comportamiento diarios y geográficos.
+- robustness to behavioral changes
 
-2. Behavioral Features
-número de sitios únicos
+The chosen model is XGBoost, which demonstrated the best temporal stability.
 
-diversidad (entropy)
+🔥 Feature Importance (XGBoost — Temporal & Behavioral)
+Using XGBoost’s gain metric on the first 13 named features:
 
-repetición de dominios
+Feature	Importance
+temporal__time_bin_night	32.73
+temporal__is_night_session	30.76
+temporal__local_hour	24.13
+temporal__time_bin_evening	8.21
+temporal__time_bin_afternoon	6.75
+behavioral__total_duration	3.26
+behavioral__duration_variance	3.10
+behavioral__num_sites	2.84
+behavioral__avg_duration_per_site	2.00
+temporal__local_day_of_week	1.95
+behavioral__site_entropy	1.62
+temporal__time_bin_morning	1.59
+temporal__is_local_weekend	0.43
 
-longitud de la sesión
-Estas variables capturan el estilo de navegación del usuario.
 
-3. Environment Features
-browser
+Interpretation
+- Temporal features dominate the model: Joe’s strongest behavioral signature is nighttime browsing, with clear peaks in late evening and night hours.
 
-OS
+- Behavioral features contribute meaningfully but are less dominant.
+Joe’s browsing behavior is characterized by longer sessions, variable durations, and lower diversity.
 
-locale
+📈 Model Performance on Unseen Test Data
+To ensure that the model generalizes beyond the training distribution, a fully unseen temporal test window was used for final evaluation. This dataset represents future user behavior and was never used during training or hyperparameter tuning.
+The final XGBoost model was evaluated on the most recent sessions, which represent unseen future data. This test window is the most important one, as it reflects real‑world deployment conditions.
 
-location
-Estas variables ayudan a distinguir contextos de navegación.
+Detected Joe: 557
 
-4. Embedding Features (NLP)
-Usé SentenceTransformer MiniLM-L6-v2 para convertir listas de sitios en vectores semánticos.
-Estos embeddings fueron los más importantes para el modelo finalgit add Dockerfile
-git commit -m "update Dockerfile"
+Class 0 (Not Joe)
+- Precision: 0.9994
+- Recall:    0.9812
+- F1-score:  0.9902
+- Support:   23878
 
-## ✔️ Estado final
+Class 1 (Joe)
+- Precision: 0.1939
+- Recall:    0.8852
+- F1-score:  0.3181
+- Support:   122
 
-El pipeline es completamente reproducible, el modelo está serializado, el drift está analizado y el script de predicción genera el archivo final sin dependencias externas.
+Overall Accuracy:      0.9807
 
+Interpretation
+- The model successfully identifies 88.5% of Joe’s sessions in the unseen test dataset.
+
+- Precision for Joe is naturally low due to extreme class imbalance (Joe ≈ 0.5% of all sessions).
+
+- Non‑Joe performance remains extremely high, ensuring minimal disruption to normal users.
+
+These results demonstrate that the model can reliably detect Joe’s sessions even when his behavior appears normal and even when evaluated on future data not seen during training. As expected in behavioral modeling, precision decreases over time as user patterns evolve, but the model maintains strong recall and temporal stability, ensuring consistent identification of Joe across changing conditions.
+
+
+⚙️ Final Prediction Pipeline
+"run_standalone.py" executes the full production‑ready prediction pipeline:
+
+- Loads the serialized model and feature‑engineering pipeline
+
+- Computes temporal, behavioral and environment features from raw session data
+
+- Generates semantic session embeddings using Sentence‑Transformers
+
+- Applies the final XGBoost classifier
+
+- Applies the optimal decision threshold for binary classification
+
+- Writes result.csv containing one prediction per line
+(0 = Joe, 1 = Not Joe)
+
+The script is fully standalone, reproducible, and does not depend on notebooks or Docker. It can be executed in any clean Python environment using only requirements.txt.
+
+🐳 Running the Project - Local Execution (recommended)
+1. Install dependencies: pip install -r requirements.txt
+
+2. Run the standalone script: python run_standalone.py
+
+3. Output: result.csv (This file contains one prediction per line:
+0 = Joe, 1 = Not Joe)
+
+🚀 Next Steps & Possible Improvements
+Although the pipeline is complete and production‑ready, several enhancements could further improve robustness and long‑term maintainability:
+
+1. SHAP‑based interpretability  
+Provide deeper insight into how temporal features, behavioral patterns, environment features and semantic embeddings influence model decisions.
+
+2. Online drift monitoring  
+Continuously track changes in Joe’s behavior over time and trigger automatic retraining when drift is detected.
+
+3. Domain clustering  
+Group domains into semantic categories to reduce embedding noise and improve generalization.
+
+54. Real‑time inference  
+Deploy the model behind an API for live session scoring and continuous monitoring
+
+✔️ Final Status
+- The pipeline is fully reproducible, the model is serialized, temporal drift is analyzed, and the standalone script generates the final predictions without external dependencies.
+
+- This project demonstrates a complete, production‑ready workflow for identifying Joe’s sessions.
+
+⭐ Conclusion
+This screening project delivers a complete end‑to‑end workflow for user‑session classification — from EDA and feature engineering to model development, temporal‑drift evaluation, and production preparation.
+The final model is not only accurate but also temporally stable, supported by careful undersampling, semantic embeddings, and a robust feature‑engineering pipeline.
+
+The standalone prediction script ensures full reproducibility, allowing results to be generated consistently across different machines without relying on notebooks or containerized environments.
+
+Overall, the solution meets all challenge requirements and provides a strong foundation for future enhancements such as drift monitoring, and real‑time inference.
