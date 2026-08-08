@@ -1,4 +1,4 @@
-
+%%writefile predictions_code.py
 import sys
 import json
 import requests
@@ -8,6 +8,7 @@ import zipfile
 import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
+import os
 
 ############################################################
 # 1. Download all required files from GitHub
@@ -19,7 +20,7 @@ def download_from_github(path, save_as=None):
     r = requests.get(url)
     if r.status_code != 200:
         raise Exception(f"Error downloading {path}: {r.status_code}")
-    save_as = save_as or path.split("/")[-1]
+    save_as = save_as or path
     with open(save_as, "wb") as f:
         f.write(r.content)
     print(f"✔ Downloaded: {save_as}")
@@ -30,21 +31,33 @@ def download_from_github_lfs(path, save_as=None):
     r = requests.get(url, stream=True)
     if r.status_code != 200:
         raise Exception(f"Error downloading {path}: {r.status_code}")
-    save_as = save_as or path.split("/")[-1]
+    save_as = save_as or path
     with open(save_as, "wb") as f:
         for chunk in r.iter_content(chunk_size=1024*1024):
             if chunk:
                 f.write(chunk)
     print(f"✔ Downloaded (LFS): {save_as}")
 
-# Download source code and data
+# Create folders
+os.makedirs("src", exist_ok=True)
+os.makedirs("models", exist_ok=True)
+os.makedirs("data", exist_ok=True)
+os.makedirs("output", exist_ok=True)
+os.makedirs("data", exist_ok=True)
+
+# Download source code
+download_from_github("src/__init__.py")
 download_from_github("src/temporal_features.py")
 download_from_github("src/behavioral_features.py")
 download_from_github("src/pipeline.py")
 download_from_github("src/compute_session_embeddings.py")
+
+# Download models
 download_from_github("models/fe_pipeline.pkl")
 download_from_github("models/model_selected.pkl")
 download_from_github("models/threshold_model_selected.json")
+
+# Download data
 download_from_github("data/timezone_lookup.pkl")
 download_from_github("data/verify.zip")
 download_from_github_lfs("data/domain_cache.pkl")
@@ -53,19 +66,19 @@ download_from_github_lfs("data/domain_cache.pkl")
 # 2. Load all required objects BEFORE importing modules
 ############################################################
 
-with open("timezone_lookup.pkl", "rb") as f:
+with open("data/timezone_lookup.pkl", "rb") as f:
     timezone_lookup = pickle.load(f)
 
-with open("fe_pipeline.pkl", "rb") as f:
+with open("models/fe_pipeline.pkl", "rb") as f:
     fe_pipeline = pickle.load(f)
 
-with open("domain_cache.pkl", "rb") as f:
+with open("data/domain_cache.pkl", "rb") as f:
     domain_cache = pickle.load(f)
 
-with open("model_selected.pkl", "rb") as f:
+with open("models/model_selected.pkl", "rb") as f:
     model_selected = pickle.load(f)
 
-with open("threshold_model_selected.json", "r") as f:
+with open("models/threshold_model_selected.json", "r") as f:
     threshold = json.load(f)["threshold"]
 
 # Make objects available globally
@@ -77,10 +90,10 @@ __main__.domain_cache = domain_cache
 # 3. Import project modules
 ############################################################
 
-import pipeline
-import temporal_features
-import behavioral_features
-import compute_session_embeddings
+import src.pipeline as pipeline
+import src.temporal_features as temporal_features
+import src.behavioral_features as behavioral_features
+import src.compute_session_embeddings as compute_session_embeddings
 
 # Reload to ensure fresh state
 importlib.reload(pipeline)
@@ -111,7 +124,7 @@ compute_session_embeddings.DOMAIN_CACHE = domain_cache
 # 5. Load verification dataset
 ############################################################
 
-with zipfile.ZipFile("verify.zip", "r") as z:
+with zipfile.ZipFile("data/verify.zip", "r") as z:
     z.extractall("/content/catchjoe")
 
 def load_json(path):
@@ -120,7 +133,7 @@ def load_json(path):
         return json.load(f)
 
 verify_data = load_json("/content/catchjoe/verify.json")
-verify_df = pd.json_normalize(verify_data)
+verify_df = pd.json_normalize(verify_data).head()
 del verify_data
 
 # Insert dummy user_id (required by pipeline)
@@ -163,6 +176,6 @@ labels = np.where(preds == 1, 0, 1)
 ############################################################
 
 result_df = pd.DataFrame({"label": labels})
-result_df.to_csv("result.csv", index=False)
+result_df.to_csv("output/result.csv", index=False)
 
 print("✔ result.csv created successfully!")
